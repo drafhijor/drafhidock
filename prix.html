@@ -1,16 +1,8 @@
 <div style="max-width:760px;font-family:Segoe UI, Arial, sans-serif; line-height:1.3;">
   <h3 style="margin:0 0 10px;">Calculateur – Note du critère Prix</h3>
   <p style="margin:0 0 12px; color:#444;">
-    Entrez ci-dessous le montant hors taxe qui figure sur chaque proposition financière que vous avez reçue. L'outil calcule automatiquement la note sur 10 de chaque candidat, et la note pondérée du critère financier. 
-    Vous pouvez également calculer la note pondérée, selon l'importance que vous choisissez de donner au critère prix dans votre évaluation. <br>
-    <strong>Note prix (/10) = (Prix le plus bas / Prix de l’offre) × 10</strong><br>
+    Formule : <strong>Note prix (/10) = (Prix le plus bas / Prix de l’offre) × 10</strong>.
   </p>
-
-  <div style="margin:8px 0 12px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-    <label for="ponderationPrix"><strong>Pondération du critère prix (%)</strong></label>
-    <input id="ponderationPrix" type="number" min="0" max="100" value="40" style="width:90px; padding:4px;">
-    <span id="sumCheck" style="color:#666;"></span>
-  </div>
 
   <table id="priceTable" border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%;">
     <thead>
@@ -19,7 +11,6 @@
         <th style="text-align:right;">Prix (€ HT)</th>
         <th style="text-align:right;">Prix le + bas (€)</th>
         <th style="text-align:right;">Note prix /10</th>
-        <th style="text-align:right;">Note pondérée</th>
         <th>Action</th>
       </tr>
     </thead>
@@ -29,7 +20,6 @@
         <td><input type="number" class="prix" min="0.0001" step="0.01" value="10000" style="width:120px; text-align:right;"></td>
         <td class="minRef" style="text-align:right;">—</td>
         <td class="note10" style="text-align:right;">—</td>
-        <td class="notePonderee" style="text-align:right;">—</td>
         <td style="text-align:center;"><button class="delRow" title="Supprimer">🗑️</button></td>
       </tr>
       <tr>
@@ -37,7 +27,6 @@
         <td><input type="number" class="prix" min="0.0001" step="0.01" value="12000" style="width:120px; text-align:right;"></td>
         <td class="minRef" style="text-align:right;">—</td>
         <td class="note10" style="text-align:right;">—</td>
-        <td class="notePonderee" style="text-align:right;">—</td>
         <td style="text-align:center;"><button class="delRow" title="Supprimer">🗑️</button></td>
       </tr>
       <tr>
@@ -45,19 +34,9 @@
         <td><input type="number" class="prix" min="0.0001" step="0.01" value="15000" style="width:120px; text-align:right;"></td>
         <td class="minRef" style="text-align:right;">—</td>
         <td class="note10" style="text-align:right;">—</td>
-        <td class="notePonderee" style="text-align:right;">—</td>
         <td style="text-align:center;"><button class="delRow" title="Supprimer">🗑️</button></td>
       </tr>
     </tbody>
-    <tfoot>
-      <tr style="background:#fafafa;">
-        <td colspan="3" style="text-align:right; font-weight:bold;">Rappel : Pondération prix (%)</td>
-        <td colspan="2" style="text-align:right;">
-          <span id="pondEcho">40</span> %
-        </td>
-        <td></td>
-      </tr>
-    </tfoot>
   </table>
 
   <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -73,8 +52,6 @@
     const body = document.getElementById('priceBody');
     const addRowBtn = document.getElementById('addRow');
     const resetBtn = document.getElementById('resetVals');
-    const pondInput = document.getElementById('ponderationPrix');
-    const pondEcho = document.getElementById('pondEcho');
     const alertMsg = document.getElementById('alertMsg');
 
     function parsePosFloat(v){
@@ -86,51 +63,38 @@
       alertMsg.style.display = 'none';
       alertMsg.textContent = '';
 
-      // Collect prices
       const rows = Array.from(body.querySelectorAll('tr'));
       const prices = rows.map(r => parsePosFloat(r.querySelector('.prix').value)).filter(v => v !== null);
 
       if(prices.length === 0){
-        // No valid price
         rows.forEach(r => {
           r.querySelector('.minRef').textContent = '—';
           r.querySelector('.note10').textContent = '—';
-          r.querySelector('.notePonderee').textContent = '—';
         });
         return;
       }
 
       const minPrice = Math.min(...prices);
-      const pond = Math.min(100, Math.max(0, parseFloat(pondInput.value) || 0));
-      pondEcho.textContent = pond.toString();
 
-      // Update per row
       rows.forEach(r => {
         const priceInput = r.querySelector('.prix');
         const minRefCell = r.querySelector('.minRef');
         const note10Cell = r.querySelector('.note10');
-        const notePondCell = r.querySelector('.notePonderee');
 
         const price = parsePosFloat(priceInput.value);
-
-        minRefCell.textContent = isFinite(minPrice) ? minPrice.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+        minRefCell.textContent = minPrice.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
 
         if(price === null){
           note10Cell.textContent = '—';
-          notePondCell.textContent = '—';
           return;
         }
 
-        // Note (/10) = (min / price) * 10
         const rawNote = (minPrice / price) * 10;
         const note10 = Math.max(0, Math.min(10, rawNote));
-        const notePonderee = note10 * (pond / 100);
 
         note10Cell.textContent = note10.toFixed(2);
-        notePondCell.textContent = notePonderee.toFixed(2);
       });
 
-      // Basic guardrail
       if(minPrice <= 0){
         alertMsg.textContent = "Les prix doivent être strictement positifs.";
         alertMsg.style.display = 'block';
@@ -144,7 +108,6 @@
         <td><input type="number" class="prix" min="0.0001" step="0.01" value="" style="width:120px; text-align:right;"></td>
         <td class="minRef" style="text-align:right;">—</td>
         <td class="note10" style="text-align:right;">—</td>
-        <td class="notePonderee" style="text-align:right;">—</td>
         <td style="text-align:center;"><button class="delRow" title="Supprimer">🗑️</button></td>
       `;
       body.appendChild(tr);
@@ -164,13 +127,10 @@
       }
     }
 
-    // Attach existing rows
     Array.from(body.querySelectorAll('tr')).forEach(attachRowEvents);
 
-    // Global events
     addRowBtn.addEventListener('click', addRow);
     resetBtn.addEventListener('click', () => {
-      // Reset to 3 rows with placeholders
       body.innerHTML = '';
       ['Candidat A','Candidat B','Candidat C'].forEach((label, idx) => {
         const tr = document.createElement('tr');
@@ -179,20 +139,14 @@
           <td><input type="number" class="prix" min="0.0001" step="0.01" value="" style="width:120px; text-align:right;"></td>
           <td class="minRef" style="text-align:right;">—</td>
           <td class="note10" style="text-align:right;">—</td>
-          <td class="notePonderee" style="text-align:right;">—</td>
           <td style="text-align:center;"><button class="delRow" title="Supprimer">🗑️</button></td>
         `;
         body.appendChild(tr);
         attachRowEvents(tr);
       });
-      pondInput.value = 40;
-      pondEcho.textContent = '40';
       compute();
     });
 
-    pondInput.addEventListener('input', compute);
-
-    // First compute
     compute();
   })();
 </script>
@@ -392,4 +346,5 @@
   calculer();
 
 </script>
+
 
